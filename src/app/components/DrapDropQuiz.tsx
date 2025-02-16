@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DndContext, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { createPortal } from "react-dom";
 
@@ -16,6 +16,12 @@ export default function DragDropQuiz() {
   const [matches, setMatches] = useState<{ [key: string]: string }>({});
   const [submitted, setSubmitted] = useState(false);
   const [activeDrag, setActiveDrag] = useState<string | null>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
+
 
   const handleDragStart = (event: any) => {
     setActiveDrag(event.active.id);
@@ -54,12 +60,14 @@ export default function DragDropQuiz() {
         </button>
       </div>
 
-      {createPortal(
-        <DragOverlay>
-          {activeDrag ? <DraggableWord id={activeDrag} text={words.find((w) => w.id === activeDrag)?.word || ""} isDragging /> : null}
-        </DragOverlay>,
-        document.body
-      )}
+      {portalTarget &&
+        createPortal(
+          <DragOverlay>
+            {activeDrag ? <DraggableWord id={activeDrag} text={words.find((w) => w.id === activeDrag)?.word || ""} isDragging /> : null}
+          </DragOverlay>,
+          portalTarget
+        )
+      }
     </DndContext>
   );
 }
@@ -68,6 +76,7 @@ function DraggableWord({ id, text, isDragging = false, activeDrag, matches }: { 
   const { attributes, listeners, setNodeRef, isDragging: isCurrentlyDragging } = useDraggable({ id });
 
   const isMatched = matches?.[id] !== undefined;
+  const isBeingDragged = isCurrentlyDragging || activeDrag === id;
 
   return (
     <div
@@ -75,7 +84,7 @@ function DraggableWord({ id, text, isDragging = false, activeDrag, matches }: { 
       {...listeners}
       {...attributes}
       className={`p-2 mt-2 border cursor-pointer rounded-md transition-all duration-200 ease-in-out 
-        ${isDragging || isCurrentlyDragging ? "bg-black text-white scale-110 opacity-90 shadow-lg" : ""}
+        ${isBeingDragged ? "bg-black text-white scale-110 opacity-90 shadow-lg" : ""}
         ${isMatched ? "text-gray-400 cursor-not-allowed" : "bg-gray-100"}
       `}
     >
@@ -83,6 +92,7 @@ function DraggableWord({ id, text, isDragging = false, activeDrag, matches }: { 
     </div>
   );
 }
+
 
 function DroppableZone({ id, label, matches, submitted }: { id: string; label: string; matches: any; submitted: boolean }) {
   const { setNodeRef } = useDroppable({ id });

@@ -1,3 +1,5 @@
+"use client"
+
 import DragDropQuiz from "./components/DrapDropQuiz";
 import Quiz from "./components/Quiz";
 
